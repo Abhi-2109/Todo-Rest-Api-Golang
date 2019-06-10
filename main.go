@@ -10,11 +10,15 @@ import (
 	"strings"
 	"time"
 
+	"sync"
+
 	"github.com/abhi2109/todo_API/data"
 )
 
 var Todos data.TodoArray
 var Users data.UserArray
+var usermux sync.RWMutex
+var todomux sync.RWMutex
 
 func homePage(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, "Welcome to the HomePage!")
@@ -115,9 +119,13 @@ func DeleteTodo(writer http.ResponseWriter, request *http.Request, id int) {
 
 func singleTodoHandler(writer http.ResponseWriter, request *http.Request, id int) {
 	if request.Method == "GET" {
+		todomux.RLock()
 		GetSingleTodo(writer, request, id)
+		todomux.RUnlock()
 	} else if request.Method == "DELETE" {
+		todomux.Lock()
 		DeleteTodo(writer, request, id)
+		todomux.Unlock()
 	} else {
 		errorHandler(writer, "Invalid Request")
 		// Invalid Request Function
@@ -164,7 +172,9 @@ func userHandler(writer http.ResponseWriter, request *http.Request) {
 	if path[len(path)-1] != "" {
 		id, err := strconv.Atoi(path[len(path)-1])
 		if err == nil {
+			usermux.RLock()
 			singleUserHandler(writer, request, id)
+			usermux.RUnlock()
 
 		} else {
 			errorHandler(writer, "Invalid URL")
@@ -174,10 +184,14 @@ func userHandler(writer http.ResponseWriter, request *http.Request) {
 	} else {
 
 		if request.Method == "POST" {
+			usermux.Lock()
 			PostUser(writer, request)
+			usermux.Unlock()
 		} else if request.Method == "GET" {
 			//errorHandler(writer, "This is shit")
+			usermux.RLock()
 			GetAllUser(writer, request)
+			usermux.RUnlock()
 		} else {
 			errorHandler(writer, "Invalid Request")
 			// Invalid Request Function
@@ -255,7 +269,11 @@ func usertodoHandler(writer http.ResponseWriter, request *http.Request) {
 	if path[len(path)-1] != "" {
 		id, err := strconv.Atoi(path[len(path)-1])
 		if err == nil {
+			usermux.RLock()
+			todomux.RLock()
 			getUserAllTodo(writer, request, id)
+			usermux.RUnlock()
+			todomux.RUnlock()
 		} else {
 			fmt.Println("error caught")
 			errorHandler(writer, "Invalid URL")
