@@ -37,7 +37,7 @@ func homePage(writer http.ResponseWriter, request *http.Request) {
 func errorHandler(writer http.ResponseWriter, errorName string) {
 	var errorhere error
 	errorhere.Error = errorName
-	json.NewEncoder(writer).Encode(&errorhere)
+	json.NewEncoder(writer).Encode(errorhere)
 }
 func PostTodo(writer http.ResponseWriter, request *http.Request) {
 	Name := request.FormValue("Name")
@@ -102,6 +102,7 @@ func todoHandler(writer http.ResponseWriter, request *http.Request) {
 }
 func GetSingleTodo(writer http.ResponseWriter, request *http.Request, id int) {
 	fmt.Println("Get Single Todo")
+	errorHandler(writer, "Single Todo")
 	for _, singleTodo := range Todos {
 		if singleTodo.Id == id {
 			json.NewEncoder(writer).Encode(singleTodo)
@@ -137,6 +138,7 @@ func singleTodoHandler(writer http.ResponseWriter, request *http.Request, id int
 
 func PostUser(writer http.ResponseWriter, request *http.Request) {
 	Name := request.FormValue("Name")
+	fmt.Println(Name, "678889")
 	newId := 1
 	for _, i := range Users {
 		if i.Id >= newId {
@@ -152,9 +154,13 @@ func PostUser(writer http.ResponseWriter, request *http.Request) {
 
 }
 func GetAllUser(writer http.ResponseWriter, request *http.Request) {
+	writer.WriteHeader(http.StatusOK)
+	writer.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(writer).Encode(Users)
+
 }
 func userHandler(writer http.ResponseWriter, request *http.Request) {
+
 	urlPath := request.URL.Path
 	path := strings.Split(urlPath, "/")
 	if path[len(path)-1] != "" {
@@ -163,24 +169,24 @@ func userHandler(writer http.ResponseWriter, request *http.Request) {
 			singleUserHandler(writer, request, id)
 
 		} else {
-			fmt.Println("error caught")
 			errorHandler(writer, "Invalid URL")
 
 		}
 		return
-	}
-
-	if request.Method == "POST" {
-		PostUser(writer, request)
-	} else if request.Method == "GET" {
-		GetAllUser(writer, request)
 	} else {
-		errorHandler(writer, "Invalid Request")
-		// Invalid Request Function
+
+		if request.Method == "POST" {
+			PostUser(writer, request)
+		} else if request.Method == "GET" {
+			//errorHandler(writer, "This is shit")
+			GetAllUser(writer, request)
+		} else {
+			errorHandler(writer, "Invalid Request")
+			// Invalid Request Function
+		}
 	}
 }
 func GetSingleUser(writer http.ResponseWriter, request *http.Request, id int) {
-	fmt.Println("get Single User")
 	for _, singleUser := range Users {
 		if singleUser.Id == id {
 			json.NewEncoder(writer).Encode(&singleUser)
@@ -244,6 +250,8 @@ func getUserAllTodo(writer http.ResponseWriter, request *http.Request, id int) {
 	json.NewEncoder(writer).Encode(allTodos)
 }
 func usertodoHandler(writer http.ResponseWriter, request *http.Request) {
+
+	fmt.Println("User Todo handler")
 	urlPath := request.URL.Path
 	path := strings.Split(urlPath, "/")
 	if path[len(path)-1] != "" {
