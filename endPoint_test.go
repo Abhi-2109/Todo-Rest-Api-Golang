@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"bytes"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"strings"
 	"testing"
 )
 
@@ -78,7 +76,7 @@ func TestUserIDByNotFound(t *testing.T) {
 	}
 	//expected := `{"Id":2,"Name":"Anand"}`
 
-	expected := `{"Error":"Id not Found. It may be deleted or it has been not created till"}`
+	expected := `{"Errorname":"Id not Found. It may be deleted or it has been not created till"}`
 	if rr.Body.String()[:len(rr.Body.String())-1] != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v , Type is %T, %T",
 			rr.Body.String(), expected, rr.Body.String(), expected)
@@ -104,7 +102,7 @@ func TestUserIDByInvalidURL(t *testing.T) {
 	}
 	//expected := `{"Id":2,"Name":"Anand"}`
 
-	expected := `{"Error":"Invalid URL"}`
+	expected := `{"Errorname":"Invalid URL"}`
 	if rr.Body.String()[:len(rr.Body.String())-1] != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v , Type is %T, %T",
 			rr.Body.String(), expected, rr.Body.String(), expected)
@@ -112,16 +110,16 @@ func TestUserIDByInvalidURL(t *testing.T) {
 }
 func TestPostUser(t *testing.T) {
 	fillDummyData()
-	//var jsonStr = []byte(`{"Name" : "Rohit"}`)
-	data := url.Values{}
-	data.Set("Name", "Rohit")
-	fmt.Println(data)
+	var jsonStr = []byte(`{"Name" : "Rohit"}`)
+	//data := url.Values{}
+	//data.Set("Name", "Rohit")
+	//fmt.Println(data)
 
-	req, err := http.NewRequest("POST", "/user/", strings.NewReader(data.Encode()))
+	req, err := http.NewRequest("POST", "/user/", bytes.NewBuffer(jsonStr))
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+	//req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(userHandler)
 	handler.ServeHTTP(rr, req)

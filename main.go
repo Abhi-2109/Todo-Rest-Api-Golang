@@ -3,51 +3,45 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/abhi2109/todo_API/data"
 )
 
-type Todo struct {
-	Id          int
-	Name        string
-	Description string
-	Completed   bool
-	UserId      int
-	StartTime   time.Time
-}
-type User struct {
-	Id   int
-	Name string
-}
-type error struct {
-	//Id        int
-	Error string
-}
-
-var Todos []Todo
-var Users []User
+var Todos data.TodoArray
+var Users data.UserArray
 
 func homePage(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, "Welcome to the HomePage!")
 	//fmt.Println("Endpoint Hit: homePage")
 }
 func errorHandler(writer http.ResponseWriter, errorName string) {
-	var errorhere error
-	errorhere.Error = errorName
+	var errorhere data.Error
+	errorhere.Errorname = errorName
 	json.NewEncoder(writer).Encode(errorhere)
 }
 func PostTodo(writer http.ResponseWriter, request *http.Request) {
-	Name := request.FormValue("Name")
-	Description := request.FormValue("Description")
-	Completed, _ := strconv.ParseBool(request.FormValue("Completed"))
-	UserId, _ := strconv.Atoi(request.FormValue("UserId"))
+	b, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		errorHandler(writer, "there")
+		return
+	}
+	defer request.Body.Close()
+	var newTodo data.Todo
+	erro := newTodo.UnmarshalJSON(b)
+	if erro != nil {
+		errorHandler(writer, "Error in Processing the Data")
+		return
+	}
 	flag := false
 	newId := 0
 	for _, i := range Users {
-		if i.Id == UserId {
+		if i.Id == newTodo.UserId {
 			flag = true
 			break
 		}
@@ -61,12 +55,7 @@ func PostTodo(writer http.ResponseWriter, request *http.Request) {
 			newId = i.Id
 		}
 	}
-	var newTodo Todo
 	newTodo.Id = newId + 1
-	newTodo.Name = Name
-	newTodo.Description = Description
-	newTodo.Completed = Completed
-	newTodo.UserId = UserId
 	newTodo.StartTime = time.Now()
 	Todos = append(Todos, newTodo)
 	json.NewEncoder(writer).Encode(&newTodo)
@@ -137,17 +126,26 @@ func singleTodoHandler(writer http.ResponseWriter, request *http.Request, id int
 }
 
 func PostUser(writer http.ResponseWriter, request *http.Request) {
-	Name := request.FormValue("Name")
-	fmt.Println(Name, "678889")
+
+	b, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		errorHandler(writer, "there")
+		return
+	}
+	defer request.Body.Close()
+	var newUser data.User
+	error := newUser.UnmarshalJSON(b)
+	if error != nil {
+		errorHandler(writer, "Error in Processing the Data")
+	}
+	//json.Unmarshal(b, &newUser)
 	newId := 1
 	for _, i := range Users {
 		if i.Id >= newId {
 			newId = i.Id
 		}
 	}
-	var newUser User
 	newUser.Id = newId + 1
-	newUser.Name = Name
 
 	Users = append(Users, newUser)
 	json.NewEncoder(writer).Encode(&newUser)
@@ -197,7 +195,7 @@ func GetSingleUser(writer http.ResponseWriter, request *http.Request, id int) {
 	errorHandler(writer, "Id not Found. It may be deleted or it has been not created till")
 }
 func DeleteTodosUser(id int) {
-	var leftTodos []Todo
+	var leftTodos data.TodoArray
 	for _, i := range Todos {
 		if i.UserId != id {
 			leftTodos = append(leftTodos, i)
@@ -240,7 +238,7 @@ func getUserAllTodo(writer http.ResponseWriter, request *http.Request, id int) {
 		errorHandler(writer, "Id is either deleted or not created")
 		return
 	}
-	var allTodos []Todo
+	var allTodos data.TodoArray
 
 	for _, i := range Todos {
 		if i.UserId == id {
@@ -279,10 +277,10 @@ func handleRequest() {
 
 }
 func fillDummyData() {
-	newUser := User{1, "Abhishek"}
+	newUser := data.User{1, "Abhishek"}
 
 	Users = append(Users, newUser)
-	newUser = User{2, "Anand"}
+	newUser = data.User{2, "Anand"}
 	Users = append(Users, newUser)
 
 }
