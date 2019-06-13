@@ -22,7 +22,6 @@ var todomux sync.RWMutex
 
 func homePage(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, "Welcome to the HomePage!")
-	//fmt.Println("Endpoint Hit: homePage")
 }
 func errorHandler(writer http.ResponseWriter, errorName string) {
 	var errorhere data.Error
@@ -32,14 +31,14 @@ func errorHandler(writer http.ResponseWriter, errorName string) {
 func PostTodo(writer http.ResponseWriter, request *http.Request) {
 	b, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		errorHandler(writer, "there")
+		//errorHandler(writer, "there is a error while processing")
 		return
 	}
 	defer request.Body.Close()
 	var newTodo data.Todo
 	erro := newTodo.UnmarshalJSON(b)
 	if erro != nil {
-		errorHandler(writer, "Error in Processing the Data")
+		//errorHandler(writer, "Error in Processing the Data")
 		return
 	}
 	flag := false
@@ -60,9 +59,9 @@ func PostTodo(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 	newTodo.Id = newId + 1
-	newTodo.StartTime = time.Now()
+	//newTodo.StartTime = time.Now()
 	Todos = append(Todos, newTodo)
-	json.NewEncoder(writer).Encode(&newTodo)
+	json.NewEncoder(writer).Encode(&Todos[len(Todos)-1])
 
 }
 func GetAllTodo(writer http.ResponseWriter, request *http.Request) {
@@ -94,15 +93,12 @@ func todoHandler(writer http.ResponseWriter, request *http.Request) {
 
 }
 func GetSingleTodo(writer http.ResponseWriter, request *http.Request, id int) {
-	fmt.Println("Get Single Todo")
-	errorHandler(writer, "Single Todo")
 	for _, singleTodo := range Todos {
 		if singleTodo.Id == id {
 			json.NewEncoder(writer).Encode(singleTodo)
 			return
 		}
 	}
-	fmt.Println("Error in Deccoding")
 	errorHandler(writer, "Id not Found. It may be deleted or it has been not created till")
 }
 
@@ -128,7 +124,6 @@ func singleTodoHandler(writer http.ResponseWriter, request *http.Request, id int
 		todomux.Unlock()
 	} else {
 		errorHandler(writer, "Invalid Request")
-		// Invalid Request Function
 	}
 
 }
@@ -137,16 +132,16 @@ func PostUser(writer http.ResponseWriter, request *http.Request) {
 
 	b, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		errorHandler(writer, "there")
+		//errorHandler(writer, "there is a error while processing")
 		return
 	}
 	defer request.Body.Close()
 	var newUser data.User
 	error := newUser.UnmarshalJSON(b)
 	if error != nil {
-		errorHandler(writer, "Error in Processing the Data")
+		//errorHandler(writer, "Error in Processing the Data")
 	}
-	//json.Unmarshal(b, &newUser)
+
 	newId := 1
 	for _, i := range Users {
 		if i.Id >= newId {
@@ -156,12 +151,10 @@ func PostUser(writer http.ResponseWriter, request *http.Request) {
 	newUser.Id = newId + 1
 
 	Users = append(Users, newUser)
-	json.NewEncoder(writer).Encode(&newUser)
+	json.NewEncoder(writer).Encode(&Users[len(Users)-1])
 
 }
 func GetAllUser(writer http.ResponseWriter, request *http.Request) {
-	writer.WriteHeader(http.StatusOK)
-	writer.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(writer).Encode(Users)
 
 }
@@ -188,13 +181,11 @@ func userHandler(writer http.ResponseWriter, request *http.Request) {
 			PostUser(writer, request)
 			usermux.Unlock()
 		} else if request.Method == "GET" {
-			//errorHandler(writer, "This is shit")
 			usermux.RLock()
 			GetAllUser(writer, request)
 			usermux.RUnlock()
 		} else {
 			errorHandler(writer, "Invalid Request")
-			// Invalid Request Function
 		}
 	}
 }
@@ -202,7 +193,6 @@ func GetSingleUser(writer http.ResponseWriter, request *http.Request, id int) {
 	for _, singleUser := range Users {
 		if singleUser.Id == id {
 			json.NewEncoder(writer).Encode(&singleUser)
-
 			return
 		}
 	}
@@ -236,7 +226,6 @@ func singleUserHandler(writer http.ResponseWriter, request *http.Request, id int
 		DeleteUser(writer, request, id)
 	} else {
 		errorHandler(writer, "Invalid Request")
-		// Invalid Request Function
 	}
 }
 
@@ -262,8 +251,6 @@ func getUserAllTodo(writer http.ResponseWriter, request *http.Request, id int) {
 	json.NewEncoder(writer).Encode(allTodos)
 }
 func usertodoHandler(writer http.ResponseWriter, request *http.Request) {
-
-	fmt.Println("User Todo handler")
 	urlPath := request.URL.Path
 	path := strings.Split(urlPath, "/")
 	if path[len(path)-1] != "" {
@@ -275,9 +262,7 @@ func usertodoHandler(writer http.ResponseWriter, request *http.Request) {
 			usermux.RUnlock()
 			todomux.RUnlock()
 		} else {
-			fmt.Println("error caught")
 			errorHandler(writer, "Invalid URL")
-
 		}
 		return
 	} else {
@@ -285,7 +270,7 @@ func usertodoHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func handleRequest() {
+func HandleRequest() {
 	/* This function is to handle all the web request  */
 
 	http.HandleFunc("/", homePage)
@@ -301,12 +286,14 @@ func fillDummyData() {
 	newUser = data.User{2, "Anand"}
 	Users = append(Users, newUser)
 
+	newTodo := data.Todo{1, "Anandhjvwdghjkjkj", "", false, 1, time.Time{}}
+	Todos = append(Todos, newTodo)
+	newTodo = data.Todo{2, "Man", "", false, 2, time.Time{}}
+	Todos = append(Todos, newTodo)
+
 }
 func main() {
-
-	fillDummyData()
-
-	handleRequest()
+	HandleRequest()
 	// Specifying that it should listen at port :8081
 	log.Fatal(http.ListenAndServe(":8081", nil))
 }
